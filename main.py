@@ -2,18 +2,18 @@ import requests
 from bs4 import BeautifulSoup
 import random
 import time
+import csv
 
 
+def us_ag():
+    with open('user_agent.txt', 'r', encoding='utf-8') as file:
+        user_agent_list = []
+        for i in file.readlines():
+            user_agent_list.append({'user-agent': i.strip()})
+    return user_agent_list
 
-with open('user_agent.txt', 'r', encoding='utf-8') as file:
-    user_agent_list = []
-    for i in file.readlines():
-        user_agent_list.append({'user-agent': i.strip()})
-    #print(*user_agent_list, sep='\n')
 
-
-
-def soup(url):
+def soup(url, user_agent_list=us_ag()):
     response = requests.get(url, headers=random.choice(user_agent_list))
     response.encoding = 'utf-8'
     return BeautifulSoup(response.text, 'lxml')
@@ -22,11 +22,11 @@ def soup(url):
 def pages():
     default_url = 'https://www.novostroy37.ru'
     soup_parts = soup(default_url)
-    c = 0
+    c = False
     for part in soup_parts.find_all('li', class_='menu-item'):
-        if c == 0:
+        if not c:
             first = part
-            c += 1
+            c = True
         else:
             if part == first:
                 break
@@ -37,25 +37,26 @@ def pages():
                         int(soup(url_parts).find('div', class_='nums').find_all('a', class_='dark_link')[-1].text) + 1)]
         except AttributeError:
             continue
-        
 
-        
 
+def in_stock():
+    for url in pages():
+        soup_stock = soup(url)
+        for item in [(i['data-id'], i.find('span', class_='value').text, url) for i in soup_stock.find_all('div', class_='item-stock')]:
+            if item[1] == 'Нет в наличии':
+                yield item
+
+
+def writer():
+    with open('out_of_stock.csv', 'w', newline='', encoding='utf-8-sig') as file:
+        w = csv.writer(file, delimiter=';')
+        w.writerow(['Артикул', 'Статус', 'Ссылка'])
+        for i in in_stock():
+            w.writerow([i[0], i[1], f'{i[2].split('?')[0]}{i[0]}/'])
 
 
 def main():
-    d = {}
-    for i in pages():
-        print(i)
-        s = requests.get(i, headers=random.choice(user_agent_list))
-        if s.status_code != 200:
-            d[i] = d.get(i, s.status_code)
-            print(d[i])
-            time.sleep(20)
-            s2 = requests.get(i, headers=random.choice, timeout=30)
-            print(f'new status = {s2.status_code}')
-
-    print(d)
+    writer()
 
 
 if __name__ == '__main__':
