@@ -44,7 +44,7 @@ def in_stock():
         for item in [(
             i.find('a', class_='dark_link').find('span').text.strip(),
             i.find('span', class_='value').text,
-            f'https://novostroy37.ru/{i.find('a', class_='dark_link')['href'].strip()}'
+            f'https://novostroy37.ru{i.find('a', class_='dark_link')['href'].strip()}'
             )
             for i in soup_stock.find_all('div', class_='item_info TYPE_1')]:
             if item[1] == 'Нет в наличии':
