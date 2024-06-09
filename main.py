@@ -22,7 +22,14 @@ def soup(url):
 def pages():
     default_url = 'https://www.novostroy37.ru'
     soup_parts = soup(default_url)
+    c = 0
     for part in soup_parts.find_all('li', class_='menu-item'):
+        if c == 0:
+            first = part
+            c += 1
+        else:
+            if part == first:
+                break
         url_parts = f'{default_url}{part.find('a')['href']}'
         try:
             yield from [f'{url_parts}?PAGEN_1={i}' 
