@@ -1,7 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
 import random
-import time
 import csv
 
 
@@ -42,7 +41,12 @@ def pages():
 def in_stock():
     for url in pages():
         soup_stock = soup(url)
-        for item in [(i['data-id'], i.find('span', class_='value').text, url) for i in soup_stock.find_all('div', class_='item-stock')]:
+        for item in [(
+            i.find('a', class_='dark_link').find('span').text.strip(),
+            i.find('span', class_='value').text,
+            f'https://novostroy37.ru/{i.find('a', class_='dark_link')['href'].strip()}'
+            )
+            for i in soup_stock.find_all('div', class_='item_info TYPE_1')]:
             if item[1] == 'Нет в наличии':
                 yield item
 
@@ -50,9 +54,10 @@ def in_stock():
 def writer():
     with open('out_of_stock.csv', 'w', newline='', encoding='utf-8-sig') as file:
         w = csv.writer(file, delimiter=';')
-        w.writerow(['Артикул', 'Статус', 'Ссылка'])
+        w.writerow(['Наименование', 'Статус', 'Ссылка'])
         for i in in_stock():
-            w.writerow([i[0], i[1], f'{i[2].split('?')[0]}{i[0]}/'])
+            print(i)
+            w.writerow([i[0], i[1], i[2]])
 
 
 def main():
